@@ -1,2 +1,9 @@
 ---
-# defaults file for ansible-role-ants
+# roles/ants/defaults/main.yml
+
+ants_state              : 'present'
+ants_workstation_reboot : False
+ants_git_url            : 'git://github.com/stnava/ANTs.git'
+ants_bin_dir_path       : '~/antsbin'
+ants_src_dir_path       : '~/ANTs'
+ants_make_jobs          : 1

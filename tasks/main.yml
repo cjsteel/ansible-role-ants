@@ -1,2 +1,105 @@
 ---
-# tasks file for ansible-role-ants
+# roles/ants/tasks/main.yml
+
+# ants_state   : 'present'
+# ants_git_url : 'git://github.com/stnava/ANTs.git'
+# ants_dir_path : '~/ants'
+# ants_src_path : '~/ANTs'
+# ants_make_jobs: 1
+
+# was an ants directory created before now?
+
+- name: "Do we already have an ants directory?"
+  stat:
+    path: '{{ ants_dir_path }}/bin/ANTS'
+  register: stat_ants_result
+
+- name: "check value of stat_ants_result"
+  debug:
+    var=stat_ants_result
+
+# install any requirements
+
+## Update the apt-cache
+
+- name: "update apt cache"
+  apt: update_cache=yes cache_valid_time=43200
+  tags: [ 'packages', 'ants-requirements' ]
+
+## UCF-OLD Check
+
+- name: "Check if 50unattended-upgrades.ucf.old exists when workstation role starts"
+  stat:
+    path: '/etc/apt/apt.conf.d/50unattended-upgrades.ucf-old'
+  register: stat_result
+
+- name: "check value of stat_50unattended-upgrades_ucf_old_result"
+  debug:
+    var=stat_result
+
+- name: "Check for 50unattended-upgrades.ucf-old, remove and notify if found"
+  file:
+    path: '/etc/apt/apt.conf.d/50unattended-upgrades.ucf.old'
+    state: absent
+
+## dist-upgrade
+
+- name: "run an apt-get dist-upgrade"
+  apt: upgrade=dist
+  tags: [ 'packages' ]
+
+# restart the system 
+
+- name: "debug the value of the ansible_connection variable"
+  debug:
+    var=ansible_connection
+  tags: [ 'debug' ]
+
+- name: "debug the value of the ants_workstation_reboot variable"
+  debug:
+    var=ants_workstation_reboot
+  tags: [ 'debug' ]
+
+- name: "restart the system after dist-upgrade"
+  shell: sleep 2 && shutdown -r now "Ansible actuated reboot following dist-upgrade"
+  async: 1
+  poll: 0
+  become: true
+  ignore_errors: true
+  register: ants_workstation_reboot_test
+  when: ansible_connection != 'local' and ants_workstation_reboot is defined and ants_workstation_reboot == 'yes'
+
+# wait for target systems port 22 to become available before continuing
+
+- name: "debug the value of the ants_workstation_reboot_test variable"
+  debug:
+    var=ants_workstation_reboot_test
+  tags: [ 'debug' ]
+
+- name: wait for the server to restart
+  local_action: wait_for host={{ inventory_hostname }}
+                port={{ workstation_default_ssh_port }}
+                search_regex=OpenSSH
+                delay=40
+                timeout=300
+                state=started
+  become: false
+  when: ants_workstation_reboot_test.started == 1 and ants_workstation_reboot is defined and ants_workstation_reboot == 'yes'
+
+- name: "pause when os is ubuntu 16.04 cause it takes a bit longer for shorewall to start for some reason"
+  pause: seconds=10
+  when: ansible_connection != 'local' and ants_workstation_reboot is defined and ants_workstation_reboot == 'yes' and ansible_distribution_version == '16.04'
+
+
+## Ensure any requirements for Ubuntu 16.04 are installed
+
+- name: "ensure Ubuntu 16.04 requirements are installed"
+  apt: name={{ item }} state=present
+  become: True
+  with_items:
+    - git
+    - cmake-curses-gui
+    - zlib1g-dev
+  tags: [ 'packages', 'ants-requirements' ]
+
+
