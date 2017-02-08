@@ -1,12 +1,6 @@
 ---
 # roles/ants/tasks/main.yml
 
-# ants_state   : 'present'
-# ants_git_url : 'git://github.com/stnava/ANTs.git'
-# ants_dir_path : '~/ants'
-# ants_src_path : '~/ANTs'
-# ants_make_jobs: 1
-
 # was an ants directory created before now?
 
 - name: "Do we already have an ants directory?"
@@ -55,9 +49,9 @@
     var=ansible_connection
   tags: [ 'debug' ]
 
-- name: "debug the value of the ants_workstation_reboot variable"
+- name: "debug the value of the ants_reboot_target variable"
   debug:
-    var=ants_workstation_reboot
+    var=ants_reboot_target
   tags: [ 'debug' ]
 
 - name: "restart the system after dist-upgrade"
@@ -66,14 +60,14 @@
   poll: 0
   become: true
   ignore_errors: true
-  register: ants_workstation_reboot_test
-  when: ansible_connection != 'local' and ants_workstation_reboot is defined and ants_workstation_reboot == 'yes'
+  register: ants_reboot_target_test
+  when: ansible_connection != 'local' and ants_reboot_target is defined and ants_reboot_target == 'yes'
 
 # wait for target systems port 22 to become available before continuing
 
-- name: "debug the value of the ants_workstation_reboot_test variable"
+- name: "debug the value of the ants_reboot_target_test variable"
   debug:
-    var=ants_workstation_reboot_test
+    var=ants_reboot_target_test
   tags: [ 'debug' ]
 
 - name: wait for the server to restart
@@ -84,12 +78,11 @@
                 timeout=300
                 state=started
   become: false
-  when: ants_workstation_reboot_test.started == 1 and ants_workstation_reboot is defined and ants_workstation_reboot == 'yes'
+  when: ants_reboot_target_test.started == 1 and ants_reboot_target is defined and ants_reboot_target == 'yes'
 
 - name: "pause when os is ubuntu 16.04 cause it takes a bit longer for shorewall to start for some reason"
   pause: seconds=10
-  when: ansible_connection != 'local' and ants_workstation_reboot is defined and ants_workstation_reboot == 'yes' and ansible_distribution_version == '16.04'
-
+  when: ansible_connection != 'local' and ants_reboot_target is defined and ants_reboot_target == 'yes' and ansible_distribution_version == '16.04'
 
 ## Ensure any requirements for Ubuntu 16.04 are installed
 
@@ -102,4 +95,36 @@
     - zlib1g-dev
   tags: [ 'packages', 'ants-requirements' ]
 
+# Example git checkout from Ansible Playbooks
+- git:
+    repo: '{{ ants_git_url }}'
+    dest: '{{ ants_src_path }}'
+    version: '{{ ants_git_version }}'
+
+- file:
+    path : '{{ ants_dir_path }}'
+    owner: '{{ ants_owner }}'
+    group: '{{ ants_group }}'
+    mode : '{{ ants_mode }}'
+    state : '{{ ants_directory_state }}'
+
+- template:
+    src : 'Makefile.j2'
+    dest: '{{ ants_dir_path }}/Makefile'
+    owner: '{{ ants_owner }}'
+    group: '{{ ants_group }}'
+    mode : '{{ ants_mode }}'
+
+- name: "Change into the working directory and execute cmake if creates var value does not exist"
+  command: 'make -j {{ ants_cmake_jobs }}'
+  args:
+    chdir: '{{ ants_dir_path }}/'
+    creates: '{{ ants_dir_path }}/bin/ants'
+
+
+
+# ants_git_url            : 'git://github.com/stnava/ANTs.git'
+#ants_dir_path           : '/opt/ants'
+#ants_src_path           : '/opt/ANTs'
+#ants_make_jobs          : 1
 

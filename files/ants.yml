@@ -1,0 +1,6 @@
+---
+- hosts: ants
+  become: true
+  gather_facts: false
+  roles:
+    - ants
