@@ -99,7 +99,7 @@
 - git:
     repo: '{{ ants_git_url }}'
     dest: '{{ ants_src_path }}'
-    version: '{{ ants_git_version }}'
+#    version: '{{ ants_git_version }}'
 
 - file:
     path : '{{ ants_dir_path }}'
@@ -115,11 +115,20 @@
     group: '{{ ants_group }}'
     mode : '{{ ants_mode }}'
 
+# add | tee output.txt ?
+
 - name: "Change into the working directory and execute cmake if creates var value does not exist"
-  command: 'make -j {{ ants_cmake_jobs }}'
+  shell: make -j {{ ants_cmake_jobs }} | tee output.log
   args:
     chdir: '{{ ants_dir_path }}/'
     creates: '{{ ants_dir_path }}/bin/ants'
+#  when: ants_compile exists
+
+#- name: "Change into the working directory and execute cmake if creates var value does not exist"
+#  shell: cd {{ ansible_env.HOME }}/{{ ants_dir_path }} && make -j {{ ants_cmake_jobs }}
+#  args:
+#    chdir: '{{ ants_dir_path }}/'
+#    creates: '{{ ants_dir_path }}/bin/ants'
 
 
 
