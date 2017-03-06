@@ -12,6 +12,7 @@ ANTs takes a **very** long time to compile. You might want to start this before 
 * ( https://github.com/stnava/ANTs/releases )[ https://github.com/stnava/ANTs/releases ]
 * [ updated ANTs compile instructions: ITKv4]( https://brianavants.wordpress.com/2012/04/13/updated-ants-compile-instructions-april-12-2012/ ) 
 
+
 Requirements
 ------------
 
@@ -85,6 +86,7 @@ cp roles/ants/files/ants.yml .
 ```shell
 ansible-playbook -i inventory/dev systems.yml
 ```
+
 
 License
 -------

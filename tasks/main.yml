@@ -21,6 +21,8 @@
   tags: [ 'packages', 'ants-requirements' ]
 
 ## UCF-OLD Check
+#
+# Bug fix for Ubuntu 16.04
 
 - name: "Check if 50unattended-upgrades.ucf.old exists when workstation role starts"
   stat:
