@@ -20,10 +20,11 @@ boxes = [
 #  },
   {
     :name => "ubuntu-1604",
+#    :box => "ubuntu/xenial64"
     :box => "bento/ubuntu-16.04",
     :ip => '10.0.0.13',
     :cpu => "50",
-    :ram => "256"
+    :ram => "2048"
   },
 #  {
 #    :name => "debian-711",
@@ -46,13 +47,16 @@ Vagrant.configure("2") do |config|
     config.vm.define box[:name] do |vms|
       vms.vm.box = box[:box]
       vms.vm.hostname = "ansible-#{role}-#{box[:name]}"
-
+      vms.vm.synced_folder ".vagrant/vagrant", "/home/vagrant"
       vms.vm.provider "virtualbox" do |v|
         v.customize ["modifyvm", :id, "--cpuexecutioncap", box[:cpu]]
         v.customize ["modifyvm", :id, "--memory", box[:ram]]
       end
 
       vms.vm.network :private_network, ip: box[:ip]
+
+      vms.vm.provision "shell",
+        inline: "sudo apt-get update && sudo apt-get install -y python"
 
       vms.vm.provision :ansible do |ansible|
         ansible.playbook = "tests/vagrant.yml"

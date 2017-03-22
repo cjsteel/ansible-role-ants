@@ -63,7 +63,7 @@
   become: true
   ignore_errors: true
   register: ants_reboot_target_test
-  when: ansible_connection != 'local' and ants_reboot_target is defined and ants_reboot_target == 'yes'
+  when: ansible_connection != 'local' and ants_reboot_target is defined and ants_reboot_target == true
 
 # wait for target systems port 22 to become available before continuing
 
@@ -74,17 +74,17 @@
 
 - name: wait for the server to restart
   local_action: wait_for host={{ inventory_hostname }}
-                port={{ workstation_default_ssh_port }}
+                port=22
                 search_regex=OpenSSH
                 delay=40
                 timeout=300
                 state=started
   become: false
-  when: ants_reboot_target_test.started == 1 and ants_reboot_target is defined and ants_reboot_target == 'yes'
+  when: ants_reboot_target_test.started == 1 and ants_reboot_target is defined and ants_reboot_target == true
 
 - name: "pause when os is ubuntu 16.04 cause it takes a bit longer for shorewall to start for some reason"
   pause: seconds=10
-  when: ansible_connection != 'local' and ants_reboot_target is defined and ants_reboot_target == 'yes' and ansible_distribution_version == '16.04'
+  when: ansible_connection != 'local' and ants_reboot_target is defined and ants_reboot_target == true and ansible_distribution_version == '16.04'
 
 ## Ensure any requirements for Ubuntu 16.04 are installed
 
@@ -97,37 +97,44 @@
     - zlib1g-dev
   tags: [ 'packages', 'ants-requirements' ]
 
-# Example git checkout from Ansible Playbooks
-- git:
+# git checkout
+
+- name: "Clone ANTs repository"
+  git:
     repo: '{{ ants_git_url }}'
     dest: '{{ ants_src_path }}'
 #    version: '{{ ants_git_version }}'
 
-- file:
+- name: "Create the ants bin directory"
+  file:
     path : '{{ ants_dir_path }}'
     owner: '{{ ants_owner }}'
     group: '{{ ants_group }}'
     mode : '{{ ants_mode }}'
     state : '{{ ants_directory_state }}'
 
-- template:
+- name: "template Makefile"
+  template:
     src : 'Makefile.j2'
     dest: '{{ ants_dir_path }}/Makefile'
     owner: '{{ ants_owner }}'
     group: '{{ ants_group }}'
     mode : '{{ ants_mode }}'
+  when : ants_build == true
 
 # add | tee output.txt ?
 
-- name: "Change into the working directory and execute cmake if creates var value does not exist"
-  shell: make -j {{ ants_cmake_jobs }} | tee output.log
+- name: "Change into the working directory and execute ccmake if creates var value does not exist"
+  shell: make -j {{ ants_ccmake_jobs }} | tee output.log
   args:
     chdir: '{{ ants_dir_path }}/'
     creates: '{{ ants_dir_path }}/bin/ants'
+  when : ants_build == true
+
 #  when: ants_compile exists
 
-#- name: "Change into the working directory and execute cmake if creates var value does not exist"
-#  shell: cd {{ ansible_env.HOME }}/{{ ants_dir_path }} && make -j {{ ants_cmake_jobs }}
+#- name: "Change into the working directory and execute ccmake if creates var value does not exist"
+#  shell: cd {{ ansible_env.HOME }}/{{ ants_dir_path }} && make -j {{ ants_ccmake_jobs }}
 #  args:
 #    chdir: '{{ ants_dir_path }}/'
 #    creates: '{{ ants_dir_path }}/bin/ants'

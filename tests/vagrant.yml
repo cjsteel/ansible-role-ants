@@ -2,22 +2,26 @@
 ---
 - hosts: all
   remote_user: vagrant
-  sudo: true
+  become: true
   roles:
     - ../../
   vars:
-    - skel_entries:
-      - path: "/etc/skel/.ssh"
-        mode: "0700"
-        state: "directory"
-      - path: "/etc/skel/passwd"
-        src: "/etc/passwd"
-        state: "link"
-      - path: "/etc/skel/foo"
-        src: "./files/foo"
-        state: "copy"
-      - path: "/etc/skel/bar"
-        src: "./templates/bar.j2"
-        state: "template"
+    - ants_state         : 'present'
+    - ants_build         : false
+    - ants_reboot_target : false
 
 
+    - ants_git_version        : 'v2.1.0'
+    - ants_git_url            : 'git://github.com/stnava/ANTs.git'
+    - ants_dir_path           : '~/bin/ants'
+    - ants_src_path           : '~/src/ANTs'
+
+    - ants_directory_state    : 'directory'
+    - ants_owner              : 'vagrant'
+    - ants_group              : 'vagrant'
+    - ants_mode               : '0755'
+
+    - ants_ccmake_command     : '/usr/bin/ccmake'
+    - ants_ccmake_binary_dir  : '{{ ants_dir_path }}'
+    - ants_ccmake_source_dir  : '{{ ants_src_path }}'
+    - ants_ccmake_jobs        : 1
