@@ -1,11 +1,20 @@
 # test file for bash
 ---
 - hosts: all
-  remote_user: vagrant
+  remote_user: ubuntu
   become: true
-  roles:
-    - ../../
+  pre_tasks:
+
+    - set_fact: fact_controller_user="{{ lookup('env','USER') }}"
+    - debug: var=fact_controller_user
+
+    - set_fact: fact_controller_home="{{ lookup('env','HOME') }}"
+    - debug: var=fact_controller_home
+
   vars:
+    - ants_remote_user : 'ubuntu'
+
+
     - ants_state         : 'present'
     - ants_build         : false
     - ants_reboot_target : false
@@ -17,11 +26,15 @@
     - ants_src_path           : '~/src/ANTs'
 
     - ants_directory_state    : 'directory'
-    - ants_owner              : 'vagrant'
-    - ants_group              : 'vagrant'
+    - ants_owner              : '{{ ants_remote_user }}'
+    - ants_group              : '{{ ants_remote_user }}'
     - ants_mode               : '0755'
 
     - ants_ccmake_command     : '/usr/bin/ccmake'
     - ants_ccmake_binary_dir  : '{{ ants_dir_path }}'
     - ants_ccmake_source_dir  : '{{ ants_src_path }}'
     - ants_ccmake_jobs        : 1
+
+  roles:
+    - ../../
+

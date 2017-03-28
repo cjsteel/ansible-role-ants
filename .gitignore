@@ -1,6 +1,6 @@
 # temp files
 *~
-
+*.log
 # private files
 .private
 .prv
