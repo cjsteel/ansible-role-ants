@@ -13,6 +13,7 @@ ANTs takes a **very** long time to compile. You might want to start this before 
 * [ updated ANTs compile instructions: ITKv4]( https://brianavants.wordpress.com/2012/04/13/updated-ants-compile-instructions-april-12-2012/ ) 
 
 
+
 Requirements
 ------------
 
@@ -23,6 +24,7 @@ sudo apt-get install cmake-curses-gui
 sudo apt-get install zlib1g-dev
 ```
 
+
 Role Variables
 --------------
 
@@ -31,15 +33,30 @@ A description of the settable variables for this role should go here, including 
  ### defaults/main.yml
 
 ```yaml
-ants_state   : 'present'
-ants_git_url : 'git://github.com/stnava/ANTs.git'
-ants_bin_dir_path : '~/antsbin'
-ants_src_dir_path : '~/ANTs'
-ants_make_jobs: 1
+---
+# roles/ants/defaults/main.yml
 
-# ants_cmake_command  : '/usr/bin/cmake' 
-ants_cmake_source_dir : '/opt/ANTs_src'  # /home/aceadmin/ANTs
-ants_cmake_binary_dir : '/opt/ants'      # /home/aceadmin/antsbin
+ants_state         : 'present'
+ants_build         : true
+ants_reboot_target : false
+ants_ssh_port      : 22
+
+ants_git_version        : 'v2.1.0'
+ants_git_url            : 'git://github.com/stnava/ANTs.git'
+ants_dir_path           : '/usr/bin/ants'
+ants_src_path           : '/usr/src/ANTs'
+#ants_dir_path           : '~/bin/ants' # Adjust ants_owner
+#ants_src_path           : '~/src/ANTs' # and ants_group...
+
+ants_directory_state    : 'directory'
+ants_owner              : 'root'
+ants_group              : 'root'
+ants_mode               : '0755'
+
+ants_cmake_command     : '/usr/bin/ccmake'
+ants_cmake_binary_dir  : '{{ ants_dir_path }}'
+ants_cmake_source_dir  : '{{ ants_src_path }}'
+ants_cmake_jobs        : 1
 ```
 
 
@@ -47,6 +64,7 @@ Dependencies
 ------------
 
 A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
+
 
 Example Playbooks
 ----------------

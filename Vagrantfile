@@ -55,7 +55,8 @@ Vagrant.configure("2") do |config|
       vms.vm.network :private_network, ip: box[:ip]
 
       vms.vm.provision "shell",
-        inline: "sudo apt-get update && sudo apt-get install -y python"
+        inline: "sudo apt-get update && sudo apt-get install -y python && \
+                 sudo apt-get install openssh-server"
 
       vms.vm.provision :ansible do |ansible|
         ansible.playbook = "tests/vagrant.yml"
