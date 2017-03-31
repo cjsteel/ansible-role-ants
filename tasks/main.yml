@@ -19,6 +19,7 @@
 - name: "update apt cache"
   apt: update_cache=yes cache_valid_time=43200
   tags: [ 'packages', 'ants-requirements' ]
+  when: ants_state == 'present'
 
 ## UCF-OLD Check
 #
@@ -28,6 +29,7 @@
   stat:
     path: '/etc/apt/apt.conf.d/50unattended-upgrades.ucf-old'
   register: stat_result
+  when: ants_state == 'present'
 
 - name: "check value of stat_50unattended-upgrades_ucf_old_result"
   debug:
@@ -37,12 +39,14 @@
   file:
     path: '/etc/apt/apt.conf.d/50unattended-upgrades.ucf.old'
     state: absent
+  when: ants_state == 'present'
 
 ## dist-upgrade
 
 - name: "run an apt-get dist-upgrade"
   apt: upgrade=dist
   tags: [ 'packages' ]
+  when: ants_state == 'present'
 
 # restart the system 
 
@@ -63,7 +67,7 @@
   become: true
   ignore_errors: true
   register: ants_reboot_target_test
-  when: ansible_connection != 'local' and ants_reboot_target is defined and ants_reboot_target == true
+  when: ansible_connection != 'local' and ants_reboot_target is defined and ants_reboot_target == true and ants_state == 'present'
 
 # wait for target systems port 22 to become available before continuing
 
@@ -71,6 +75,7 @@
   debug:
     var=ants_reboot_target_test
   tags: [ 'debug' ]
+
 
 - name: "debug the value of ansible_connection"
   debug:
@@ -83,6 +88,7 @@
     var=ants_ssh_port
   tags: [ 'debug' ]
 
+
 - name: wait for the server to restart
   local_action: wait_for host={{ inventory_hostname }}
                 port='{{ ants_ssh_port }}'
@@ -91,11 +97,11 @@
                 timeout=300
                 state=started
   become: false
-  when: ants_reboot_target_test.started == 1 and ants_reboot_target is defined and ants_reboot_target == true
+  when: ants_reboot_target_test.started == 1 and ants_reboot_target is defined and ants_reboot_target == true and ants_state == 'present'
 
 - name: "pause when os is ubuntu 16.04 cause it takes a bit longer for shorewall to start for some reason"
   pause: seconds=10
-  when: ansible_connection != 'local' and ants_reboot_target is defined and ants_reboot_target == true and ansible_distribution_version == '16.04'
+  when: ansible_connection != 'local' and ants_reboot_target is defined and ants_reboot_target == true and ansible_distribution_version == '16.04' and ants_state == 'present'
 
 ## Ensure any requirements for Ubuntu 16.04 are installed
 
@@ -109,6 +115,7 @@
     - gcc
     - g++
   tags: [ 'packages', 'ants-requirements' ]
+  when: ants_state == 'present'
 
 # git checkout
 
@@ -117,6 +124,7 @@
     repo: '{{ ants_git_url }}'
     dest: '{{ ants_src_path }}'
 #    version: '{{ ants_git_version }}'
+  when: ants_state == 'present'
 
 - name: "Create the ants bin directory"
   file:
@@ -125,33 +133,75 @@
     group: '{{ ants_group }}'
     mode : '{{ ants_mode }}'
     state : '{{ ants_directory_state }}'
+  when: ants_state == 'present'
 
-- name: "template Makefile"
-  template:
-    src : 'Makefile.j2'
-    dest: '{{ ants_dir_path }}/Makefile'
+- name: "get our current home directory"
+  become: '{{ ants_owner }}'
+  shell: >
+    getent passwd {{ ants_owner }} | cut -d: -f6
+  changed_when: false
+  register: user_home
+
+- name: debug output
+  debug: var=user_home.stdout
+
+- name: "When our install type is all_users copy over usr_bin_ants.tar"
+  copy:
+    src : 'usr_bin_ants.tar'
+    dest: '{{ user_home.stdout }}/usr_bin_ants.tar'
     owner: '{{ ants_owner }}'
     group: '{{ ants_group }}'
     mode : '{{ ants_mode }}'
-  when : ants_build == true
+  when : ants_install_type is defined and ants_install_type == 'all_users'  and ants_state == 'present'
 
-# add | tee output.txt ?
-
-- name: "Change into the working directory and execute ccmake if creates var value does not exist"
-  shell: make -j {{ ants_cmake_jobs }} | tee output.log
+- name: "when not exists and install type all_users untar our make stuff"
+  shell: tar -cvf /root/usr_bin_ants.tar /usr/bin/ants
   args:
-    chdir: '{{ ants_dir_path }}/'
-    creates: '{{ ants_dir_path }}/bin/ants'
-  when : ants_build == true
+    chdir: '{{ user_home.stdout }}'
+    creates: '{{ ants_dir_path }}/ANTS-build'
+  when : ants_install_type is defined and ants_install_type == 'all_users' and ants_state == 'present'
 
-#  when: ants_compile exists
+
+- name: "add export FREESURFER_HOME=/usr/local/freesurfer to /etc/skel/.bashrc"
+  become: true
+  blockinfile:
+    marker: '## {mark} ANSIBLE MANAGED BLOCK in ~/.bashrc for ANTs'
+    dest: '/etc/skel/.bashrc'
+    insertafter: 'EOF'
+    block: |
+      # export the ANTs path
+      #
+      # ANTs 
+      if [ -d "/usr/bin/ants/bin/" ]
+      then
+         export ANTSPATH=/usr/bin/ants/bin/
+         export PATH=${ANTSPATH}:$PATH
+      fi
+  when: ants_state == 'absent' or ants_state == 'purge'
+
+# untested
+#
+# Asynchronous Actions and Polling
+# http://docs.ansible.com/ansible/playbooks_async.html
+#
+# easiest way to do this is to kick them off all at once and then poll until they are done.
+#
+#- name: "Change into the working directory and execute ccmake if creates var value does not exist"
+#  shell: make -j {{ ants_cmake_jobs }} | tee output.log
+#  args:
+#    chdir: '{{ ants_dir_path }}/'
+#    creates: '{{ ants_dir_path }}/ANTS-build'
+#  when : ants_install_type is defined and ants_install_type == 'all_users'
+
+
+# THIS TAKES AN INCREADABLY LONG TIME
+
 
 #- name: "Change into the working directory and execute ccmake if creates var value does not exist"
-#  shell: cd {{ ansible_env.HOME }}/{{ ants_dir_path }} && make -j {{ ants_cmake_jobs }}
+#  shell: cd {{ ants_dir_path }} && make -j {{ ants_cmake_jobs }}
 #  args:
 #    chdir: '{{ ants_dir_path }}/'
 #    creates: '{{ ants_dir_path }}/bin/ants'
-
 
 
 # ants_git_url            : 'git://github.com/stnava/ANTs.git'

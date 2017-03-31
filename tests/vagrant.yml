@@ -15,11 +15,14 @@
     - ants_remote_user : 'ubuntu'
 
 
-    - ants_state         : 'present'
+    - ants_state         : 'present' # 'absent' # 'purge'
     - ants_build         : false
     - ants_reboot_target : false # does not work with Vagrant
     - ants_ssh_port      : 2200
+    - ants_install_type  : 'all_users'
+    - ants_debug         : true
 
+    - ants_bashrc_src_path    : '../files/bashrc'
     - ants_git_version        : 'v2.1.0'
     - ants_git_url            : 'git://github.com/stnava/ANTs.git'
     - ants_dir_path           : '/usr/bin/ants'

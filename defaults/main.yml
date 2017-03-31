@@ -5,11 +5,17 @@ ants_state         : 'present'
 ants_build         : true
 ants_reboot_target : false
 ants_ssh_port      : 22
+ants_install_type  : 'all_users'
+
+ants_bashrc_src_path    : 'files/bashrc'
 
 ants_git_version        : 'v2.1.0'
 ants_git_url            : 'git://github.com/stnava/ANTs.git'
 ants_dir_path           : '/usr/bin/ants'
 ants_src_path           : '/usr/src/ANTs'
+
+# custom (per user) ants installation option
+
 #ants_dir_path           : '~/bin/ants'
 #ants_src_path           : '~/src/ANTs'
 
