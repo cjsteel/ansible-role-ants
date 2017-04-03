@@ -152,15 +152,15 @@
     owner: '{{ ants_owner }}'
     group: '{{ ants_group }}'
     mode : '{{ ants_mode }}'
-  when : ants_install_type is defined and ants_install_type == 'all_users'  and ants_state == 'present'
+  when : ants_install_type == 'all_users'  and ants_state == 'present'
 
-- name: "when {{ ants_dir_path }}/ANTS-build does not exist and install type all_users untar our make stuff"
+- name: "when ants_install_type is all_users we untar our make stuff to the bin/ants dir"
   become: '{{ ants_owner }}'
   shell: "tar -cvf /root/usr_bin_ants.tar '{{ ants_dir_path }}'"
   args:
     chdir: '{{ user_home.stdout }}'
     creates: '{{ ants_dir_path }}/ANTS-build'
-  when : ants_install_type is defined and ants_install_type == 'all_users' and ants_state == 'present'
+  when : ants_install_type == 'all_users' and ants_state == 'present'
 
 # untested
 #
