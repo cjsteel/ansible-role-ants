@@ -3,14 +3,14 @@
 
 # ants_state absent and purged are equivalent at this time
 
+ants_role_name     : 'ants'
 ants_state         : 'present' # 'absent' # 'purged'
 ants_build         : true
 ants_reboot_target : false
 ants_ssh_port      : 22
 ants_install_type  : 'all_users'
 
-ants_bashrc_src_path    : 'files/bashrc'
-
+ants_bashrc_src_path    : 'roles/{{ ants_role_name }}/files/bashrc'
 ants_dir_path           : '/usr/bin/ants'
 ants_src_path           : '/usr/src/ANTs'
 
