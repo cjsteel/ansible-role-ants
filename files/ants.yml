@@ -1,6 +1,17 @@
 ---
+# file: {{ project_name }}/ants.yml
+
 - hosts: ants
   become: true
   gather_facts: false
+  pre_tasks:
+
+    - set_fact: fact_controller_user="{{ lookup('env','USER') }}"
+    - debug: var=fact_controller_user
+
+    - set_fact: fact_controller_home="{{ lookup('env','HOME') }}"
+    - debug: var=fact_controller_home
+
   roles:
+
     - ants

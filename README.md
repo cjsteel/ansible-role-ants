@@ -69,6 +69,35 @@ A list of other roles hosted on Galaxy should go here, plus any details in regar
 Example Playbooks
 ----------------
 
+### project_name/ants.yml
+
+The roles playbook might look something like this:
+
+```shell
+---
+# file: {{ project_name }}/ants.yml
+- hosts: ants
+  become: true
+  gather_facts: true
+  pre_tasks:
+
+    - set_fact: fact_controller_user="{{ lookup('env','USER') }}"
+    - debug: var=fact_controller_user
+
+    - set_fact: fact_controller_home="{{ lookup('env','HOME') }}"
+    - debug: var=fact_controller_home
+
+  roles:
+
+    - ants
+```
+
+Copy the example role playbook and edit if required.
+
+```shell
+cp roles/ants/files/ants.yml .
+```
+
 ### projects/systems.yml
 
 Example of projects main playbook:
