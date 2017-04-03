@@ -161,24 +161,6 @@
     creates: '{{ ants_dir_path }}/ANTS-build'
   when : ants_install_type is defined and ants_install_type == 'all_users' and ants_state == 'present'
 
-
-- name: "add export FREESURFER_HOME=/usr/local/freesurfer to /etc/skel/.bashrc"
-  become: true
-  blockinfile:
-    marker: '## {mark} ANSIBLE MANAGED BLOCK in ~/.bashrc for ANTs'
-    dest: '/etc/skel/.bashrc'
-    insertafter: 'EOF'
-    block: |
-      # export the ANTs path
-      #
-      # ANTs 
-      if [ -d "/usr/bin/ants/bin/" ]
-      then
-         export ANTSPATH=/usr/bin/ants/bin/
-         export PATH=${ANTSPATH}:$PATH
-      fi
-  when: ants_state == 'absent' or ants_state == 'purge'
-
 # untested
 #
 # Asynchronous Actions and Polling
@@ -186,16 +168,16 @@
 #
 # easiest way to do this is to kick them off all at once and then poll until they are done.
 #
-#- name: "Change into the working directory and execute ccmake if creates var value does not exist"
-#  shell: make -j {{ ants_cmake_jobs }} | tee output.log
-#  args:
-#    chdir: '{{ ants_dir_path }}/'
-#    creates: '{{ ants_dir_path }}/ANTS-build'
-#  when : ants_install_type is defined and ants_install_type == 'all_users'
+- name: "Change into the working directory and execute ccmake if creates var value does not exist"
+  shell: make -j {{ ants_cmake_jobs }} | tee ants_make_output.log
+  args:
+    chdir: '{{ ants_dir_path }}/'
+    creates: '{{ ants_dir_path }}/ANTS-build'
+  async: 18000  # wait up to 5 hours
+  poll: 30      # poll every 30 seconds.
+  when : ants_state == 'installed' and ants_install_type == 'all_users'
 
-
-# THIS TAKES AN INCREADABLY LONG TIME
-
+# THIS TAKES AN REALLY LONG TIME
 
 #- name: "Change into the working directory and execute ccmake if creates var value does not exist"
 #  shell: cd {{ ants_dir_path }} && make -j {{ ants_cmake_jobs }}
@@ -209,3 +191,43 @@
 #ants_src_path           : '/opt/ANTs'
 #ants_make_jobs          : 1
 
+# if path ends with "/", only inside contents of that directory are copied to destination.
+# remote_src does not copy recursivly at the time this script was created.
+
+- name: "When our install type is all_users copy over usr_bin_ants.tar"
+  copy:
+    remote_src: True
+    src : '{{ ants_src_path }}/Scripts/'
+    dest: '{{ ants_dir_path }}/ants/bin/'
+    owner: '{{ ants_owner }}'
+    group: '{{ ants_group }}'
+    mode : '{{ ants_mode }}'
+  when : ants_state == 'installed' and ants_install_type == 'all_users'
+
+## When ants_state == 'absent' or ants_state == 'purge'
+#
+# We completly remove the 
+
+- name: "remove ants bin and path exports to /etc/skel/.bashrc when ants_state is absent or purge"
+  become: true
+  blockinfile:
+    marker: '## {mark} ANSIBLE MANAGED BLOCK in ~/.bashrc for ANTs'
+    dest: '/etc/skel/.bashrc'
+    insertafter: 'EOF'
+    block: |
+      # export the ANTs path
+      #
+      # ANTs 
+      if [ -d "{{ ants_dir_path }}/ants/bin/" ]
+      then
+         export ANTSPATH={{ ants_dir_path }}/ants/bin/
+         export PATH=${ANTSPATH}:$PATH
+      fi
+  when: ants_state == 'absent' or ants_state == 'purge'
+
+- name: "Remove ANTs bin and source dirs when ants_state is purge"
+  shell: 'rm -R {{ ants_dir_path }} && rm -R {{ ants_src_path }}'
+  args:
+    chdir: '{{ user_home.stdout }}'
+  ignore_errors: true
+  when : ants_state == 'absent' or ants_state == 'purge'

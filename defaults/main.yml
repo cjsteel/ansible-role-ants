@@ -1,7 +1,9 @@
 ---
 # roles/ants/defaults/main.yml
 
-ants_state         : 'present'
+# ants_state absent and purged are equivalent at this time
+
+ants_state         : 'present' # 'absent' # 'purged'
 ants_build         : true
 ants_reboot_target : false
 ants_ssh_port      : 22
@@ -9,8 +11,6 @@ ants_install_type  : 'all_users'
 
 ants_bashrc_src_path    : 'files/bashrc'
 
-ants_git_version        : 'v2.1.0'
-ants_git_url            : 'git://github.com/stnava/ANTs.git'
 ants_dir_path           : '/usr/bin/ants'
 ants_src_path           : '/usr/src/ANTs'
 
@@ -18,6 +18,10 @@ ants_src_path           : '/usr/src/ANTs'
 
 #ants_dir_path           : '~/bin/ants'
 #ants_src_path           : '~/src/ANTs'
+
+
+ants_git_version        : 'v2.1.0'
+ants_git_url            : 'git://github.com/stnava/ANTs.git'
 
 ants_directory_state    : 'directory'
 ants_owner              : 'root'

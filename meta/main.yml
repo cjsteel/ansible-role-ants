@@ -20,9 +20,9 @@ dependencies:
           # export the ANTs path
           #
           # ANTs 
-          if [ -d "/usr/bin/ants/bin/" ]
+          if [ -d "{{ ants_dir_path }}/ants/bin/" ]
           then
-             export ANTSPATH=/usr/bin/ants/bin/
+             export ANTSPATH={{ ants_dir_path }}/ants/bin/
              export PATH=${ANTSPATH}:$PATH
           fi
         state: "present"
