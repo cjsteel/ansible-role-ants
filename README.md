@@ -5,11 +5,13 @@ An Ansible role to install and manage Advanced Normalization Tools (ANTs) on Ubu
 
 ## Notes
 
-ANTs takes a **very** long time to compile. You might want to start this before leaving the office.
+ANTs takes a **very** long time to compile. So We do the make on local machine and zip with Scripes and unzip all files to remote ants directory. 
+
+the tar file is not in the ansible playbook
 
 ## Resources
 
-* ( https://github.com/stnava/ANTs/releases )[ https://github.com/stnava/ANTs/releases ]
+* [https://github.com/stnava/ANTs/releases](/releases)
 * [ updated ANTs compile instructions: ITKv4]( https://brianavants.wordpress.com/2012/04/13/updated-ants-compile-instructions-april-12-2012/ ) 
 
 
@@ -43,10 +45,7 @@ ants_ssh_port      : 22
 
 ants_git_version        : 'v2.1.0'
 ants_git_url            : 'git://github.com/stnava/ANTs.git'
-ants_dir_path           : '/usr/bin/ants'
-ants_src_path           : '/usr/src/ANTs'
-#ants_dir_path           : '~/bin/ants' # Adjust ants_owner
-#ants_src_path           : '~/src/ANTs' # and ants_group...
+ants_dir_path           : '/opt/ants'
 
 ants_directory_state    : 'directory'
 ants_owner              : 'root'
@@ -138,10 +137,20 @@ ansible-playbook -i inventory/dev systems.yml
 License
 -------
 
-MIT
+- [Christopher Steel](http://mcin-cnim.ca/) | [e-mail](mailto:christopher.steel@mcgill.ca)
+- [John Le](http://mcin-cnim.ca/) | [e-mail](mailto:john.le@mcgill.ca)
+- [Andy Teng](http://mcin-cnim.ca/) | [e-mail](xiaoqiu.teng@mcgill.ca)
 
+License: [MIT](https://tldrlegal.com/license/mit-license)
 
-Author Information
-------------------
+----------
 
-An optional section for the role authors to include contact information, or a website (HTML is not allowed).
+## Open Science
+
+The Neuro has adopted the principles of Open Science. We are inspired by the likes of the Allen Institute for Brain Science, the National Institutes of Health's Human Connectome project, and the Human Genome project. For additional information, please see [Open Science at the Neuro](https://www.mcgill.ca/neuro/open-science-0).
+
+![neuro](imgs/mcin-neuro-logo.png)
+
+  
+
+- ansible-role-ANTs generated using [galaxy-role-skeleton](https://github.com/cjsteel/galaxy-role-skeleton)

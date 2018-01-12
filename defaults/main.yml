@@ -1,7 +1,17 @@
----
+
 # roles/ants/defaults/main.yml
 
 # ants_state absent and purged are equivalent at this time
+
+
+ants_controller_user           : '{{ project_controller_user_name }}'
+ants_controller_home           : '{{ project_controller_user_home }}'
+ants_controller_resource_home : '{{ project_controller_resources_home }}'
+
+ants_deployment_user           : '{{ project_deployment_user_name }}'
+ants_deployment_home           : '{{ project_deployment_user_home }}'
+ants_deployment_resource_home : '{{ project_deployment_resources_home }}'
+
 
 ants_role_name     : 'ants'
 ants_state         : 'present' # 'absent' # 'purged'
@@ -11,18 +21,13 @@ ants_ssh_port      : 22
 ants_install_type  : 'all_users'
 
 ants_bashrc_src_path    : 'roles/{{ ants_role_name }}/files/bashrc'
-ants_dir_path           : '/usr/bin/ants'
-ants_src_path           : '/usr/src/ANTs'
+ants_dir_path           : '/opt/ants'
+ants_local_resource_path: '{{ ants_controller_resource_home }}/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/ants/{{ ants_version}}'
+ants_deployment_resource_path: '{{ ants_deployment_resource_home }}/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/ants/{{ ants_version}}'
 
-# custom (per user) ants installation option
-
-#ants_dir_path           : '~/bin/ants'
-#ants_src_path           : '~/src/ANTs'
-
-
-ants_git_version        : 'v2.1.0'
+ants_version        : 'v2.1.0'
 ants_git_url            : 'git://github.com/stnava/ANTs.git'
-
+ants_package: 'usr_bin_ants.tar'
 ants_directory_state    : 'directory'
 ants_owner              : 'root'
 ants_group              : 'root'

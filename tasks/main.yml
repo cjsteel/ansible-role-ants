@@ -89,15 +89,6 @@
   tags: [ 'debug' ]
 
 
-- name: wait for the server to restart
-  local_action: wait_for host={{ inventory_hostname }}
-                port='{{ ants_ssh_port }}'
-                search_regex=OpenSSH
-                delay=40
-                timeout=300
-                state=started
-  become: false
-  when: ants_reboot_target_test.started == 1 and ants_reboot_target is defined and ants_reboot_target == true and ants_state == 'present'
 
 - name: "pause when os is ubuntu 16.04 cause it takes a bit longer for shorewall to start for some reason"
   pause: seconds=10
@@ -119,11 +110,20 @@
 
 # git checkout
 
+- name: Create ants resource path
+  become: true
+  file: 
+    path: '{{ ants_deployment_resource_path}}'
+    state: directory
+    owner: '{{ ants_deployment_user }}'
+    group: '{{ ants_deployment_user }}'
+    mode: 0750
+
 - name: "Clone ANTs repository"
   git:
     repo: '{{ ants_git_url }}'
-    dest: '{{ ants_src_path }}'
-#    version: '{{ ants_git_version }}'
+    dest: '{{ ants_deployment_resource_path }}'
+    version: '{{ ants_version }}'
   when: ants_state == 'present'
 
 - name: "Create the ants bin directory"
@@ -136,24 +136,33 @@
   when: ants_state == 'present'
 
 - name: "get our current home directory"
-  become: '{{ ants_owner }}'
+  become: '{{ ants_deployment_user }}'
   shell: >
-    getent passwd {{ ants_owner }} | cut -d: -f6
+    getent passwd {{ ants_deployment_user }} | cut -d: -f6
   changed_when: false
   register: user_home
 
 - name: debug output
   debug: var=user_home.stdout
 
-- name: "When our install type is all_users copy over usr_bin_ants.tar"
+- name: Copy over ants make packages, including Scripts from local to remote hosts
+  become: true
   copy:
-    src : 'usr_bin_ants.tar'
-    dest: '{{ user_home.stdout }}/usr_bin_ants.tar'
-    owner: '{{ ants_owner }}'
-    group: '{{ ants_group }}'
+    src: '{{ ants_local_resource_path }}/{{ ants_package }}'
+    dest: '{{ ants_deployment_resource_path }}/usr_bin_ants.tar'
+    owner: '{{ ants_deployment_user }}'
+    group: '{{ ants_deployment_user }}'
     mode : '{{ ants_mode }}'
   when : ants_install_type == 'all_users'  and ants_state == 'present'
 
+#- name: "Copy over usr_bin_ants.tar"
+#  copy:
+#    src : 'usr_bin_ants.tar'
+#    dest: '{{ ants_deployment_resource_path}}/usr_bin_ants.tar'
+#    owner: '{{ ants_deployment_user }}'
+#    group: '{{ ants_deployment_user }}'
+#    mode : '{{ ants_mode }}'
+#  when : ants_install_type == 'all_users'  and ants_state == 'present'
 
 
 - name: "debug the value of ants_dir_path"
@@ -162,68 +171,35 @@
   tags: [ 'debug' ]
 
 
-- name: "when ants_install_type is all_users we untar our make stuff to the bin/ants dir"
-  become: '{{ ants_owner }}'
-  shell: "tar -cvf {{ user_home.stdout }}/usr_bin_ants.tar '{{ ants_dir_path }}/'"
-  args:
-    chdir: '{{ user_home.stdout }}'
-    creates: '{{ ants_dir_path }}/ANTS-build'
-  when : ants_install_type == 'all_users' and ants_state == 'present'
+- name: "Unarchive our make stuff to the bin/ants dir, including Scripts"
+  unarchive:
+    src: '{{ ants_deployment_resource_path}}/usr_bin_ants.tar'
+    dest: '{{ ants_dir_path }}'
+    owner: '{{ ants_owner }}'
+    group: '{{ ants_group }}'
+    mode : '{{ ants_mode }}'
+    remote_src: yes
+  register: ants_package_unarchived  
 
-# untested
-#
-# Asynchronous Actions and Polling
-# http://docs.ansible.com/ansible/playbooks_async.html
-#
-# easiest way to do this is to kick them off all at once and then poll until they are done.
-#
 
 - name: simulate long running op (15 sec), wait for up to 45, poll every 5
   command: /bin/sleep 15
   async: 45
   poll: 5
 
-- name: "Change into the working directory and execute make if creates var value does not exist"
-  shell: make -j {{ ants_cmake_jobs }} | tee ants_make_output.log
-  args:
-    chdir: '{{ ants_dir_path }}/'
-    creates: '{{ ants_dir_path }}/ANTS-build'
-  async: 18000  # wait up to 5 hours
-  poll: 30      # poll every 30 seconds.
-  when : ants_state == 'present' and ants_install_type == 'all_users'
+- name: "debug the value of ants_deployment_user"
+  debug:
+     var=ants_deployment_user
+  tags: [ 'debug' ]
 
-# THIS TAKES AN REALLY LONG TIME
-
-#- name: "Change into the working directory and execute ccmake if creates var value does not exist"
-#  shell: cd {{ ants_dir_path }} && make -j {{ ants_cmake_jobs }}
-#  args:
-#    chdir: '{{ ants_dir_path }}/'
-#    creates: '{{ ants_dir_path }}/bin/ants'
+- name: "ensure ANTs scripts directoy exists under ants_dir_path"
+  file:
+     path: '{{ ants_dir_path }}/bin'
+     state: directory
+     recurse: yes
 
 
-# ants_git_url            : 'git://github.com/stnava/ANTs.git'
-#ants_dir_path           : '/opt/ants'
-#ants_src_path           : '/opt/ANTs'
-#ants_make_jobs          : 1
-
-# if path ends with "/", only inside contents of that directory are copied to destination.
-# remote_src does not copy recursivly at the time this script was created.
-
-#- name: "Copy ANTs scripts"
-#  copy:
-#    remote_src: True
-#    src : '{{ ants_src_path }}/Scripts/'
-#    dest: '{{ ants_dir_path }}/ants/bin/'
-#    owner: '{{ ants_owner }}'
-#    group: '{{ ants_group }}'
-#    mode : '{{ ants_mode }}'
-#  when : ants_state == 'present' and ants_install_type == 'all_users'
-
-## When ants_state == 'absent' or ants_state == 'purge'
-#
-# We completly remove the 
-
-- name: "remove ants bin and path exports to /etc/skel/.bashrc when ants_state is absent or purge"
+- name: "path exports to /etc/skel/.bashrc when ants_state is absent or purge"
   become: true
   blockinfile:
     marker: '## {mark} ANSIBLE MANAGED BLOCK in ~/.bashrc for ANTs'
@@ -233,16 +209,7 @@
       # export the ANTs path
       #
       # ANTs 
-      if [ -d "{{ ants_dir_path }}/ants/bin/" ]
-      then
-         export ANTSPATH={{ ants_dir_path }}/ants/bin/
-         export PATH=${ANTSPATH}:$PATH
-      fi
-  when: ants_state == 'absent' or ants_state == 'purge'
+       if [ -d "/opt/ants/bin" ] ; then
+         PATH="/opt/ants/bin:$PATH"
+       fi
 
-- name: "Remove ANTs bin and source dirs when ants_state is purge"
-  shell: 'rm -R {{ ants_dir_path }} && rm -R {{ ants_src_path }}'
-  args:
-    chdir: '{{ user_home.stdout }}'
-  ignore_errors: true
-  when : ants_state == 'absent' or ants_state == 'purge'
