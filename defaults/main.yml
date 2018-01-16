@@ -21,7 +21,7 @@ ants_ssh_port      : 22
 ants_install_type  : 'all_users'
 
 ants_bashrc_src_path    : 'roles/{{ ants_role_name }}/files/bashrc'
-ants_dir_path           : '/opt/ants'
+ants_dir_path           : '/usr/bin/ants'
 ants_local_resource_path: '{{ ants_controller_resource_home }}/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/ants/{{ ants_version}}'
 ants_deployment_resource_path: '{{ ants_deployment_resource_home }}/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/ants/{{ ants_version}}'
 

@@ -209,7 +209,7 @@
       # export the ANTs path
       #
       # ANTs 
-       if [ -d "/opt/ants/bin" ] ; then
-         PATH="/opt/ants/bin:$PATH"
+       if [ -d "/usr/bin/ants/bin" ] ; then
+         PATH="/usr/bin/ants/bin:$PATH"
        fi
 

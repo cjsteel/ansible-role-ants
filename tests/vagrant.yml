@@ -50,7 +50,7 @@
     - ants_git_version        : 'v2.1.0'
     - ants_git_url            : 'git://github.com/stnava/ANTs.git'
     - ants_package: 'usr_bin_ants.tar'
-    - ants_dir_path           : '/opt/ants'
+    - ants_dir_path           : '/usr/bin/ants'
     - ants_local_resource_path: '{{ ants_controller_resource_home }}/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/ants/{{ ants_version}}'
     - ants_deployment_resource_path: '{{ ants_deployment_resource_home }}/{{ ansible_distribution | lower }}/{{ ansible_distribution_version }}/ants/{{ ants_version}}'
 
