@@ -43,10 +43,10 @@
 
 ## dist-upgrade
 
-- name: "run an apt-get dist-upgrade"
-  apt: upgrade=dist
-  tags: [ 'packages' ]
-  when: ants_state == 'present'
+#- name: "run an apt-get dist-upgrade"
+#  apt: upgrade=dist
+#  tags: [ 'packages' ]
+#  when: ants_state == 'present'
 
 # restart the system 
 
@@ -60,14 +60,14 @@
     var=ants_reboot_target
   tags: [ 'debug' ]
 
-- name: "restart the system after dist-upgrade"
-  shell: sleep 2 && shutdown -r now "Ansible actuated reboot following dist-upgrade"
-  async: 1
-  poll: 0
-  become: true
-  ignore_errors: true
-  register: ants_reboot_target_test
-  when: ansible_connection != 'local' and ants_reboot_target is defined and ants_reboot_target == true and ants_state == 'present'
+#- name: "restart the system after dist-upgrade"
+#  shell: sleep 2 && shutdown -r now "Ansible actuated reboot following dist-upgrade"
+#  async: 1
+#  poll: 0
+#  become: true
+#  ignore_errors: true
+#  register: ants_reboot_target_test
+#  when: ansible_connection != 'local' and ants_reboot_target is defined and ants_reboot_target == true and ants_state == 'present'
 
 # wait for target systems port 22 to become available before continuing
 
@@ -149,20 +149,11 @@
   become: true
   copy:
     src: '{{ ants_local_resource_path }}/{{ ants_package }}'
-    dest: '{{ ants_deployment_resource_path }}/usr_bin_ants.tar'
+    dest: '{{ ants_deployment_resource_path }}/usr_bin_ants.tar.gz'
     owner: '{{ ants_deployment_user }}'
     group: '{{ ants_deployment_user }}'
     mode : '{{ ants_mode }}'
   when : ants_install_type == 'all_users'  and ants_state == 'present'
-
-#- name: "Copy over usr_bin_ants.tar"
-#  copy:
-#    src : 'usr_bin_ants.tar'
-#    dest: '{{ ants_deployment_resource_path}}/usr_bin_ants.tar'
-#    owner: '{{ ants_deployment_user }}'
-#    group: '{{ ants_deployment_user }}'
-#    mode : '{{ ants_mode }}'
-#  when : ants_install_type == 'all_users'  and ants_state == 'present'
 
 
 - name: "debug the value of ants_dir_path"
@@ -173,7 +164,7 @@
 
 - name: "Unarchive our make stuff to the bin/ants dir, including Scripts"
   unarchive:
-    src: '{{ ants_deployment_resource_path}}/usr_bin_ants.tar'
+    src: '{{ ants_deployment_resource_path}}/usr_bin_ants.tar.gz'
     dest: '{{ ants_dir_path }}'
     owner: '{{ ants_owner }}'
     group: '{{ ants_group }}'
@@ -196,8 +187,10 @@
   file:
      path: '{{ ants_dir_path }}/bin'
      state: directory
+     owner: '{{ ants_owner }}'
+     group: '{{ ants_group }}'
+     mode : '{{ ants_mode }}'
      recurse: yes
-
 
 - name: "path exports to /etc/skel/.bashrc when ants_state is absent or purge"
   become: true
