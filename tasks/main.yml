@@ -43,10 +43,10 @@
 
 ## dist-upgrade
 
-#- name: "run an apt-get dist-upgrade"
-#  apt: upgrade=dist
-#  tags: [ 'packages' ]
-#  when: ants_state == 'present'
+- name: "run an apt-get dist-upgrade"
+  apt: upgrade=dist
+  tags: [ 'packages' ]
+  when: ants_state == 'present'
 
 # restart the system 
 
@@ -60,14 +60,14 @@
     var=ants_reboot_target
   tags: [ 'debug' ]
 
-#- name: "restart the system after dist-upgrade"
-#  shell: sleep 2 && shutdown -r now "Ansible actuated reboot following dist-upgrade"
-#  async: 1
-#  poll: 0
-#  become: true
-#  ignore_errors: true
-#  register: ants_reboot_target_test
-#  when: ansible_connection != 'local' and ants_reboot_target is defined and ants_reboot_target == true and ants_state == 'present'
+- name: "restart the system after dist-upgrade"
+  shell: sleep 2 && shutdown -r now "Ansible actuated reboot following dist-upgrade"
+  async: 1
+  poll: 0
+  become: true
+  ignore_errors: true
+  register: ants_reboot_target_test
+  when: ansible_connection != 'local' and ants_reboot_target is defined and ants_reboot_target == true and ants_state == 'present'
 
 # wait for target systems port 22 to become available before continuing
 
